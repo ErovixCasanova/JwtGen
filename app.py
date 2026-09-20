@@ -1,3 +1,12 @@
+# ============================================================
+#  FREE FIRE — JWT / ACTIVATE / BOTH API
+#  Endpoints:
+#    /token    → JWT only
+#    /activate → JWT + GetLoginData
+#    /spin     → JWT + activate + spin-ready token
+#  Run: python app.py   (port 5002)
+# ============================================================
+
 import time
 import json
 import base64
@@ -16,11 +25,10 @@ from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
-from google.protobuf.message import Message
 
 
 # ============================================================
-#  PART 1 — FreeFire_pb2 (inlined)
+#  PART 1 — FreeFire_pb2 (inline)
 # ============================================================
 
 _runtime_version.ValidateProtobufRuntimeVersion(
@@ -77,72 +85,37 @@ LoginRes = _globals["LoginRes"]
 
 
 # ============================================================
-#  PART 2 — Settings & Region Configs
+#  PART 2 — Settings
 # ============================================================
 
 MAIN_KEY = base64.b64decode("WWcmdGMlREV1aDYlWmNeOA==")
-MAIN_IV = base64.b64decode("Nm95WkRyMjJFM3ljaGpNJQ==")
+MAIN_IV  = base64.b64decode("Nm95WkRyMjJFM3ljaGpNJQ==")
 RELEASEVERSION = "OB55"
 USERAGENT = "UnityPlayer/2018.4.12f1 (UnityWebRequest/1.0, libcurl/8.5.0-DEV)"
 LOGIN_URL = "https://loginbp.ppmainecoonghj.com/"
 
-# Region-specific configuration for GetLoginData
+# Modern Garena hosts (Blueshark)
 REGIONS = {
-    "IND": {
-        "get_login_data_url": "https://client.ind.freefiremobile.com/GetLoginData",
-        "client_host": "client.ind.freefiremobile.com",
-        "release_version": "OB55",
-    },
-    "BD": {
-        "get_login_data_url": "https://client.bd.freefiremobile.com/GetLoginData",
-        "client_host": "client.bd.freefiremobile.com",
-        "release_version": "OB55",
-    },
-    "SG": {
-        "get_login_data_url": "https://client.sg.freefiremobile.com/GetLoginData",
-        "client_host": "client.sg.freefiremobile.com",
-        "release_version": "OB55",
-    },
-    "ID": {
-        "get_login_data_url": "https://client.id.freefiremobile.com/GetLoginData",
-        "client_host": "client.id.freefiremobile.com",
-        "release_version": "OB55",
-    },
-    "TH": {
-        "get_login_data_url": "https://client.th.freefiremobile.com/GetLoginData",
-        "client_host": "client.th.freefiremobile.com",
-        "release_version": "OB55",
-    },
-    "VN": {
-        "get_login_data_url": "https://client.vn.freefiremobile.com/GetLoginData",
-        "client_host": "client.vn.freefiremobile.com",
-        "release_version": "OB55",
-    },
-    "BR": {
-        "get_login_data_url": "https://client.br.freefiremobile.com/GetLoginData",
-        "client_host": "client.br.freefiremobile.com",
-        "release_version": "OB55",
-    },
-    "ME": {
-        "get_login_data_url": "https://client.me.freefiremobile.com/GetLoginData",
-        "client_host": "client.me.freefiremobile.com",
-        "release_version": "OB55",
-    },
-    "PK": {
-        "get_login_data_url": "https://client.pk.freefiremobile.com/GetLoginData",
-        "client_host": "client.pk.freefiremobile.com",
-        "release_version": "OB55",
-    },
-    "EG": {
-        "get_login_data_url": "https://client.eg.freefiremobile.com/GetLoginData",
-        "client_host": "client.eg.freefiremobile.com",
-        "release_version": "OB55",
-    },
+    "IND": {"host": "clientbp.ggpolarbear.com", "release": "OB55"},
+    "BD":  {"host": "clientbp.ggpolarbear.com", "release": "OB55"},
+    "SG":  {"host": "clientbp.ggpolarbear.com", "release": "OB55"},
+    "ID":  {"host": "clientbp.ggpolarbear.com", "release": "OB55"},
+    "TH":  {"host": "clientbp.ggpolarbear.com", "release": "OB55"},
+    "VN":  {"host": "clientbp.ggpolarbear.com", "release": "OB55"},
+    "ME":  {"host": "clientbp.ggpolarbear.com", "release": "OB55"},
+    "PK":  {"host": "clientbp.ggpolarbear.com", "release": "OB55"},
+    "EU":  {"host": "clientbp.ggpolarbear.com", "release": "OB55"},
+    "MY":  {"host": "clientbp.ggpolarbear.com", "release": "OB55"},
+    "PH":  {"host": "clientbp.ggpolarbear.com", "release": "OB55"},
+    "RU":  {"host": "clientbp.ggpolarbear.com", "release": "OB55"},
+    "BR":  {"host": "client.us.freefiremobile.com", "release": "OB55"},
+    "US":  {"host": "client.us.freefiremobile.com", "release": "OB55"},
+    "SAC": {"host": "client.us.freefiremobile.com", "release": "OB55"},
+    "NA":  {"host": "client.us.freefiremobile.com", "release": "OB55"},
 }
 
-# HTTP client with connection pooling
 HTTP_LIMITS = httpx.Limits(max_keepalive_connections=20, max_connections=50)
-HTTP_TIMEOUT = httpx.Timeout(15.0, connect=5.0)
+HTTP_TIMEOUT = httpx.Timeout(20.0, connect=8.0)
 _http_client = httpx.Client(limits=HTTP_LIMITS, timeout=HTTP_TIMEOUT)
 
 
@@ -156,94 +129,62 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 
 
 # ============================================================
-#  PART 4 — Core Activation Engine (from activator file)
+#  PART 4 — Engine
 # ============================================================
 
-class AccountActivator:
-    """Merged activator + JWT generator."""
-
-    def __init__(self, region="IND"):
-        self.region = region
+class FFEngine:
+    def __init__(self):
         self.regions = REGIONS
         self.key = MAIN_KEY
         self.iv = MAIN_IV
         self.stats_lock = threading.Lock()
-        self.successful = 0
-        self.failed = 0
-        self.successful_accounts = []
-        self.failed_accounts = []
+        self.stats = {
+            "token_ok": 0, "token_fail": 0,
+            "activate_ok": 0, "activate_fail": 0,
+        }
 
-    # ---------- Protobuf helpers ----------
-    def varint_encode(self, n):
-        out = []
-        while True:
-            b = n & 0x7F
-            n >>= 7
-            if n:
-                b |= 0x80
-            out.append(b)
-            if not n:
-                break
-        return bytes(out)
-
-    def build_field(self, field_num, value):
-        if isinstance(value, int):
-            return self.varint_encode((field_num << 3) | 0) + self.varint_encode(value)
-        elif isinstance(value, (str, bytes)):
-            data = value.encode('utf-8') if isinstance(value, str) else value
-            return self.varint_encode((field_num << 3) | 2) + self.varint_encode(len(data)) + data
-        else:
-            raise TypeError(f"Unsupported type for field {field_num}: {type(value)}")
-
-    def assemble_proto(self, fields):
-        packet = b''
-        for k, v in fields.items():
-            idx = int(k)
-            if isinstance(v, list):
-                for item in v:
-                    packet += self.build_field(idx, item)
-            else:
-                packet += self.build_field(idx, v)
-        return packet
-
-    def aes_encrypt(self, plain):
+    # ---------- Crypto ----------
+    def aes_encrypt(self, plain: bytes) -> bytes:
         cipher = AES.new(self.key, AES.MODE_CBC, self.iv)
         pad_len = 16 - (len(plain) % 16)
         if pad_len == 0:
             pad_len = 16
         return cipher.encrypt(plain + bytes([pad_len]) * pad_len)
 
-    def parse_proto(self, data):
-        from google.protobuf.internal.decoder import _DecodeVarint, _DecodeVarint32
-        pos, length = 0, len(data)
-        result = {}
-        while pos < length:
-            key, pos = _DecodeVarint(data, pos)
-            field = key >> 3
-            wire = key & 7
-            if wire == 0:
-                val, pos = _DecodeVarint(data, pos)
-            elif wire == 2:
-                size, pos = _DecodeVarint32(data, pos)
-                raw = data[pos:pos + size]
-                pos += size
-                try:
-                    val = raw.decode('utf-8')
-                except Exception:
-                    val = raw.hex()
-            elif wire == 5:
-                val = int.from_bytes(data[pos:pos + 4], 'little')
-                pos += 4
-            elif wire == 1:
-                val = int.from_bytes(data[pos:pos + 8], 'little')
-                pos += 8
-            else:
-                raise Exception(f"Unknown wire type {wire}")
-            result[field] = val
-        return result
+    def json_to_proto(self, json_data: str, proto_message):
+        json_format.ParseDict(json.loads(json_data), proto_message)
+        return proto_message.SerializeToString()
 
-    # ---------- JWT generation (from file 2) ----------
-    def get_access_token(self, uid, password):
+    # ---------- Protobuf manual encoder (for GetLoginData) ----------
+    def _varint(self, n):
+        out = []
+        while True:
+            b = n & 0x7F
+            n >>= 7
+            if n: b |= 0x80
+            out.append(b)
+            if not n: break
+        return bytes(out)
+
+    def _field(self, num, val):
+        if isinstance(val, int):
+            return self._varint((num << 3) | 0) + self._varint(val)
+        if isinstance(val, (str, bytes)):
+            data = val.encode() if isinstance(val, str) else val
+            return self._varint((num << 3) | 2) + self._varint(len(data)) + data
+        raise TypeError(f"field {num}: bad type {type(val)}")
+
+    def _assemble(self, fields: dict) -> bytes:
+        out = b""
+        for k, v in fields.items():
+            if isinstance(v, list):
+                for it in v: out += self._field(int(k), it)
+            else:
+                out += self._field(int(k), v)
+        return out
+
+    # ---------- Step 1: OAuth access token ----------
+    def get_access_token(self, uid: str, password: str):
         url = "https://ffmconnect.live.gop.garenanow.com/oauth/guest/token/grant"
         payload = (
             f"uid={uid}&password={password}"
@@ -258,14 +199,14 @@ class AccountActivator:
             "Content-Type": "application/x-www-form-urlencoded",
         }
         resp = _http_client.post(url, data=payload, headers=headers)
-        data = resp.json()
+        try:
+            data = resp.json()
+        except Exception:
+            raise Exception(f"OAuth not JSON: {resp.text[:150]}")
         return data.get("access_token", "0"), data.get("open_id", "0")
 
-    def json_to_proto(self, json_data, proto_message):
-        json_format.ParseDict(json.loads(json_data), proto_message)
-        return proto_message.SerializeToString()
-
-    def _try_parse_login_res(self, data):
+    # ---------- Step 2: parse LoginRes ----------
+    def _parse_res(self, data: bytes):
         try:
             msg = LoginRes()
             msg.ParseFromString(data)
@@ -275,39 +216,33 @@ class AccountActivator:
             pass
         return None
 
-    def extract_login_res(self, raw):
-        parsed = self._try_parse_login_res(raw)
-        if parsed:
-            return parsed
+    def extract_login_res(self, raw: bytes) -> dict:
+        p = self._parse_res(raw)
+        if p: return p
 
         idx = 0
         while True:
             idx = raw.find(b"\x08", idx)
-            if idx == -1:
-                break
-            parsed = self._try_parse_login_res(raw[idx:])
-            if parsed:
-                return parsed
+            if idx == -1: break
+            p = self._parse_res(raw[idx:])
+            if p: return p
             idx += 1
 
         jwt_marker = raw.find(b"eyJhbGciOiJIUzI1NiIs")
         if jwt_marker != -1:
             for i in range(jwt_marker - 1, max(jwt_marker - 300, -1), -1):
                 if raw[i] == 0x42:
-                    parsed = self._try_parse_login_res(raw[i:])
-                    if parsed:
-                        return parsed
+                    p = self._parse_res(raw[i:])
+                    if p: return p
                     break
+        raise Exception(f"Could not parse LoginRes. Raw: {raw[:150]}")
 
-        raise Exception(f"Could not parse LoginRes. Raw: {raw[:200]}")
-
-    def generate_jwt_token(self, uid, password):
-        """Full JWT generation pipeline."""
-        start_time = time.time()
-
+    # ---------- STEP A: JWT only ----------
+    def generate_jwt(self, uid: str, password: str) -> dict:
+        start = time.time()
         token_val, open_id = self.get_access_token(uid, password)
         if token_val == "0" or open_id == "0":
-            raise Exception("Invalid UID or Password — access token not received")
+            raise Exception("Invalid UID or Password")
 
         body = json.dumps({
             "open_id": open_id,
@@ -316,9 +251,7 @@ class AccountActivator:
             "orign_platform_type": "4",
         })
         proto_bytes = self.json_to_proto(body, LoginReq())
-        payload = AES.new(MAIN_KEY, AES.MODE_CBC, MAIN_IV).encrypt(
-            proto_bytes + bytes([16 - len(proto_bytes) % 16]) * (16 - len(proto_bytes) % 16)
-        )
+        payload = self.aes_encrypt(proto_bytes)
 
         headers = {
             "User-Agent": USERAGENT,
@@ -337,199 +270,160 @@ class AccountActivator:
         resp = _http_client.post(f"{LOGIN_URL}MajorLogin", data=payload, headers=headers)
         msg = self.extract_login_res(resp.content)
 
-        elapsed = time.time() - start_time
-
         return {
+            "status": "success",
+            "uid": uid,
+            "real_uid": str(msg.get("accountId", "")),
             "access_token": token_val,
             "open_id": open_id,
-            "real_uid": str(msg.get("accountId", "")),
-            "status": "success",
-            "time": f"{elapsed:.2f}s",
-            "token": msg.get("token", ""),
             "jwt": msg.get("token", ""),
+            "token": msg.get("token", ""),
+            "ttl": msg.get("ttl", 0),
+            "server_url": msg.get("serverUrl", ""),
+            "lock_region": msg.get("lockRegion", ""),
+            "time": f"{time.time() - start:.2f}s",
         }
 
-    # ---------- GetLoginData (activator) ----------
-    def build_getlogindata_payload(self, jwt, uid, region='IND'):
+    # ---------- STEP B: GetLoginData payload ----------
+    def build_getlogindata_payload(self, jwt: str, uid: str, region: str = "IND"):
+        parts = jwt.split('.')
+        if len(parts) != 3:
+            raise Exception("Invalid JWT format")
+
+        body = parts[1] + '=' * (-len(parts[1]) % 4)
+        decoded = json.loads(base64.urlsafe_b64decode(body))
+
+        external_id = decoded.get('external_id')
+        lock_region = decoded.get('lock_region') or region
+
+        if not external_id:
+            raise Exception("JWT missing external_id — regen with /token")
+
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        fields = {
+            3: now, 4: "free fire", 5: 1,
+            7: "1.126.15",
+            8: "Android OS 10 / API-29 (QP1A.190711.020/1617006012)",
+            9: "Handheld", 10: "Vi India", 11: "WIFI",
+            12: 1600, 13: 720, 14: "320",
+            15: "ARM64 FP ASIMD AES | 2301 | 8",
+            16: 2799, 17: "PowerVR Rogue GE8320",
+            18: "OpenGL ES 3.2 build 1.1@5425693",
+            19: f"Google|{uid}",
+            20: "27.59.69.226", 21: "en",
+            22: external_id, 23: 4, 24: "Handheld",
+            25: "realme RMX2189",
+            26: lock_region,           # align to JWT
+            29: jwt, 30: 1,
+            41: "Vi India", 42: "WIFI",
+            57: "7428b253defc164018c604a1ebbfebdf",
+            60: 19799, 61: 1198, 62: 5056, 64: 1430,
+            65: 19999, 66: 1198, 67: 19799,
+            70: 4, 73: 2, 76: 1, 78: 6, 79: 2,
+            81: "64", 83: "2019120816",
+            86: "OpenGLES2", 87: 3071, 88: 8,
+            90: "New Delhi", 91: "DL", 92: 13080,
+            93: "3rd_party",
+            94: "KqsHTw+Xui+7NiknuVG39jBvqfcBIE++vNayjgpDtOGFORTYgMixv5qmFWsOvq136YMoizYxRRPFTZxTOkFnCjln760=",
+            95: 111207,
+            96: '{"cur_rate":null,"support_etc2":false}',
+            97: 1, 99: "30", 100: "38",
+            102: "47504412000e085134",
+        }
+
+        plain = self._assemble(fields)
+        return self.aes_encrypt(plain)
+
+    # ---------- STEP C: GetLoginData request ----------
+    def call_getlogindata(self, jwt: str, uid: str, region: str = "IND"):
+        cfg = self.regions.get(region, self.regions["IND"])
+        host = cfg["host"]
+        release_version = cfg["release"]
+
         try:
-            parts = jwt.split('.')
-            if len(parts) != 3:
-                raise Exception("Invalid JWT format")
-
-            payload = parts[1]
-            payload += '=' * (4 - len(payload) % 4)
-            decoded = json.loads(base64.urlsafe_b64decode(payload))
-
-            external_id = decoded.get('external_id')
-            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-            fields = {
-                3: now,
-                4: "free fire",
-                5: 1,
-                7: "1.126.15",
-                8: "Android OS 10 / API-29 (QP1A.190711.020/1617006012)",
-                9: "Handheld",
-                10: "Vi India",
-                11: "WIFI",
-                12: 1600,
-                13: 720,
-                14: "320",
-                15: "ARM64 FP ASIMD AES | 2301 | 8",
-                16: 2799,
-                17: "PowerVR Rogue GE8320",
-                18: "OpenGL ES 3.2 build 1.1@5425693",
-                19: f"Google|{uid}",
-                20: "27.59.69.226",
-                21: "en",
-                22: external_id,
-                23: 4,
-                24: "Handheld",
-                25: "realme RMX2189",
-                26: region,
-                29: jwt,
-                30: 1,
-                41: "Vi India",
-                42: "WIFI",
-                57: "7428b253defc164018c604a1ebbfebdf",
-                60: 19799,
-                61: 1198,
-                62: 5056,
-                64: 1430,
-                65: 19999,
-                66: 1198,
-                67: 19799,
-                70: 4,
-                73: 2,
-                76: 1,
-                78: 6,
-                79: 2,
-                81: "64",
-                83: "2019120816",
-                86: "OpenGLES2",
-                87: 3071,
-                88: 8,
-                90: "New Delhi",
-                91: "DL",
-                92: 13080,
-                93: "3rd_party",
-                94: "KqsHTw+Xui+7NiknuVG39jBvqfcBIE++vNayjgpDtOGFORTYgMixv5qmFWsOvq136YMoizYxRRPFTZxTOkFnCjln760=",
-                95: 111207,
-                96: '{"cur_rate":null,"support_etc2":false}',
-                97: 1,
-                99: "30",
-                100: "38",
-                102: "47504412000e085134"
-            }
-
-            plain = self.assemble_proto(fields)
-            return self.aes_encrypt(plain)
-
+            payload = self.build_getlogindata_payload(jwt, uid, region)
         except Exception as e:
-            logging.error(f"Error building GetLoginData payload: {e}")
-            return None
+            return False, f"payload: {e}"
 
-    def get_login_data(self, jwt, uid, region='IND'):
-        region_config = self.regions.get(region, self.regions['IND'])
-        url = region_config['get_login_data_url']
-        client_host = region_config['client_host']
-        release_version = region_config['release_version']
-
-        payload = self.build_getlogindata_payload(jwt, uid, region)
-        if not payload:
-            return False, "Payload build failed"
+        url = f"https://{host}/GetLoginData"
 
         headers = {
-            'Expect': '100-continue',
             'Authorization': f'Bearer {jwt}',
-            'X-Unity-Version': '2018.4.11f1',
-            'X-GA': 'v1 1',
+            'X-Unity-Version': '2018.4.12f1',
+            'X-Ga': 'v1 1',
             'ReleaseVersion': release_version,
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': 'application/octet-stream',
             'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 9; G011A Build/PI)',
-            'Host': client_host,
-            'Connection': 'close',
-            'Accept-Encoding': 'gzip, deflate, br',
+            'Host': host,
+            'Connection': 'keep-alive',
+            'Accept-Encoding': 'gzip, deflate',
         }
 
-        for attempt in range(3):
+        last_err = "no attempt"
+        for attempt in range(1, 3):
             try:
-                response = _http_client.post(url, headers=headers, data=payload, timeout=12)
-                if response.status_code == 200:
-                    logging.info(f"✅ GetLoginData successful! (UID: {uid}, Region: {region})")
+                r = _http_client.post(url, headers=headers, content=payload, timeout=15.0)
+                if r.status_code == 200:
                     return True, "OK"
-                elif response.status_code == 401:
-                    logging.error(f"❌ 401 Unauthorized for UID: {uid}")
-                    return False, "401 Unauthorized"
-                else:
-                    logging.warning(f"⚠️ GetLoginData attempt {attempt+1} failed: {response.status_code}")
-                    time.sleep(1)
+                if r.status_code in (401, 403):
+                    return False, f"{r.status_code} Unauthorized"
+                if r.status_code == 404:
+                    return False, f"404 wrong host {host}"
+                last_err = f"HTTP {r.status_code}"
+                time.sleep(0.5)
+            except httpx.ReadTimeout:
+                last_err = "read timeout"
             except Exception as e:
-                logging.warning(f"⚠️ GetLoginData attempt {attempt+1} error: {e}")
-                time.sleep(1)
+                last_err = str(e)
+                time.sleep(0.5)
 
-        return False, "All attempts failed"
+        return False, last_err
 
-    # ---------- Full activation ----------
-    def activate_account(self, uid, password, region=None):
-        region = region or self.region
-
-        logging.info(f"🔄 Activating UID: {uid} (Region: {region})")
-
-        # Step 1: Generate JWT
+    # ---------- STEP D: Full activation ----------
+    def activate(self, uid: str, password: str, region: str = "BD"):
+        # 1) get JWT
         try:
-            jwt_data = self.generate_jwt_token(uid, password)
-            jwt = jwt_data.get("jwt") or jwt_data.get("token")
-            if not jwt:
-                raise Exception("JWT token missing in response")
+            jwt_data = self.generate_jwt(uid, password)
+            with self.stats_lock:
+                self.stats["token_ok"] += 1
         except Exception as e:
             with self.stats_lock:
-                self.failed += 1
-                self.failed_accounts.append({
-                    'uid': uid, 'password': password, 'region': region,
-                    'error': f'JWT generation failed: {e}'
-                })
+                self.stats["token_fail"] += 1
             return {"status": "error", "stage": "jwt", "error": str(e)}
 
-        # Step 2: GetLoginData
-        ok, msg = self.get_login_data(jwt, uid, region)
+        jwt = jwt_data["jwt"]
+
+        # 2) GetLoginData
+        ok, msg = self.call_getlogindata(jwt, uid, region)
 
         if ok:
             with self.stats_lock:
-                self.successful += 1
-                self.successful_accounts.append({
-                    'uid': uid, 'password': password, 'region': region,
-                    'jwt': jwt, 'status': 'activated'
-                })
-            logging.info(f"✅ Account activated: {uid}")
+                self.stats["activate_ok"] += 1
             return {
                 "status": "success",
                 "uid": uid,
-                "real_uid": jwt_data.get("real_uid"),
+                "real_uid": jwt_data["real_uid"],
                 "region": region,
                 "jwt": jwt,
-                "access_token": jwt_data.get("access_token"),
-                "open_id": jwt_data.get("open_id"),
-                "time": jwt_data.get("time"),
+                "access_token": jwt_data["access_token"],
+                "open_id": jwt_data["open_id"],
+                "time": jwt_data["time"],
             }
         else:
             with self.stats_lock:
-                self.failed += 1
-                self.failed_accounts.append({
-                    'uid': uid, 'password': password, 'region': region,
-                    'error': f'GetLoginData failed: {msg}'
-                })
+                self.stats["activate_fail"] += 1
             return {
                 "status": "error",
                 "stage": "get_login_data",
                 "error": msg,
                 "jwt": jwt,
-                "real_uid": jwt_data.get("real_uid"),
+                "real_uid": jwt_data["real_uid"],
+                "region": region,
             }
 
 
-# Singleton activator instance
-activator = AccountActivator()
+engine = FFEngine()
 
 
 # ============================================================
@@ -541,91 +435,100 @@ def index():
     return jsonify({
         "status": "ok",
         "endpoints": {
-            "jwt_only": "/token?uid=UID&password=PASS",
-            "activate": "/activate?uid=UID&password=PASS&region=IND",
-            "stats": "/stats",
-            "regions": "/regions",
+            "token":    "/token?uid=UID&password=PASS              → JWT only",
+            "activate": "/activate?uid=UID&password=PASS&region=BD → JWT + GetLoginData",
+            "spin":     "/spin?uid=UID&password=PASS&region=BD     → ready-to-spin JWT",
+            "stats":    "/stats",
+            "regions":  "/regions",
         },
-        "example": "/activate?uid=18097039025&password=yourpass&region=IND",
     }), 200
 
 
 @app.route("/token", methods=["GET"])
-def get_jwt_token():
-    """Generate JWT only (no activation)."""
+def route_token():
+    """JWT ONLY — no activation."""
     uid = request.args.get("uid")
     password = request.args.get("password")
-
     if not uid or not password:
-        return jsonify({
-            "status": "error",
-            "error": "Both uid and password parameters are required"
-        }), 400
-
+        return jsonify({"status": "error",
+                        "error": "uid and password required"}), 400
     try:
-        token_data = activator.generate_jwt_token(uid, password)
-        return jsonify(token_data), 200
+        return jsonify(engine.generate_jwt(uid, password)), 200
     except Exception as e:
-        return jsonify({
-            "status": "error",
-            "error": f"Failed to generate token: {str(e)}"
-        }), 500
+        return jsonify({"status": "error", "error": str(e)}), 200
 
 
 @app.route("/activate", methods=["GET", "POST"])
-def activate():
-    """Generate JWT + call GetLoginData to activate the account."""
+def route_activate():
+    """JWT + GetLoginData."""
     if request.method == "POST":
         body = request.get_json(silent=True) or {}
         uid = body.get("uid") or request.form.get("uid")
         password = body.get("password") or request.form.get("password")
-        region = body.get("region") or request.form.get("region", "IND")
+        region = (body.get("region") or request.form.get("region", "BD")).upper()
     else:
         uid = request.args.get("uid")
         password = request.args.get("password")
-        region = request.args.get("region", "IND")
+        region = (request.args.get("region", "BD")).upper()
 
     if not uid or not password:
-        return jsonify({
-            "status": "error",
-            "error": "Both uid and password parameters are required"
-        }), 400
-
-    region = region.upper()
+        return jsonify({"status": "error",
+                        "error": "uid and password required"}), 400
     if region not in REGIONS:
-        return jsonify({
-            "status": "error",
-            "error": f"Unsupported region: {region}",
-            "supported": list(REGIONS.keys())
-        }), 400
+        return jsonify({"status": "error",
+                        "error": f"unsupported region {region}",
+                        "supported": list(REGIONS.keys())}), 400
 
-    try:
-        result = activator.activate_account(uid, password, region)
-        status_code = 200 if result.get("status") == "success" else 500
-        return jsonify(result), status_code
-    except Exception as e:
-        logging.exception("Activation failed")
-        return jsonify({
-            "status": "error",
-            "error": f"Activation failed: {str(e)}"
-        }), 500
+    return jsonify(engine.activate(uid, password, region)), 200
 
 
-@app.route("/stats", methods=["GET"])
-def stats():
+@app.route("/spin", methods=["GET", "POST"])
+def route_spin():
+    """
+    Ready-to-spin: returns JWT even if GetLoginData soft-fails.
+    Ideal for the Naruto spinner.
+    """
+    if request.method == "POST":
+        body = request.get_json(silent=True) or {}
+        uid = body.get("uid") or request.form.get("uid")
+        password = body.get("password") or request.form.get("password")
+        region = (body.get("region") or request.form.get("region", "BD")).upper()
+    else:
+        uid = request.args.get("uid")
+        password = request.args.get("password")
+        region = (request.args.get("region", "BD")).upper()
+
+    if not uid or not password:
+        return jsonify({"status": "error",
+                        "error": "uid and password required"}), 400
+
+    result = engine.activate(uid, password, region)
+
+    # /spin always returns a usable token, even on activate failure
     return jsonify({
-        "successful": activator.successful,
-        "failed": activator.failed,
-        "successful_accounts": activator.successful_accounts,
-        "failed_accounts": activator.failed_accounts,
+        "status": "success" if result.get("status") == "success" else "partial",
+        "jwt": result.get("jwt"),
+        "uid": uid,
+        "real_uid": result.get("real_uid"),
+        "region": region,
+        "access_token": result.get("access_token"),
+        "open_id": result.get("open_id"),
+        "activation": result.get("status"),
+        "activation_error": result.get("error"),
+        "time": result.get("time"),
     }), 200
 
 
+@app.route("/stats", methods=["GET"])
+def route_stats():
+    return jsonify(engine.stats), 200
+
+
 @app.route("/regions", methods=["GET"])
-def regions():
+def route_regions():
     return jsonify({
-        "supported_regions": list(REGIONS.keys()),
-        "default": "IND",
+        "supported": list(REGIONS.keys()),
+        "default": "BD",
     }), 200
 
 
@@ -634,5 +537,5 @@ def regions():
 # ============================================================
 
 if __name__ == "__main__":
-    logging.info("🚀 Free Fire Activator + JWT Generator running on port 5002")
+    logging.info("🚀 FF API — /token  /activate  /spin  (port 5002)")
     app.run(host="0.0.0.0", port=5002, debug=False)
